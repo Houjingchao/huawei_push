@@ -3,26 +3,28 @@ package huawei_push
 import (
 	"github.com/cocotyty/httpclient"
 	"time"
-	"encoding/json"
 	"strconv"
 	"fmt"
 	"github.com/Houjingchao/huawei_push/consts"
 )
 
-//获取token
-func GetToken(client_id, client_secret string) string {
+type HuaweiPush struct {
+	ClientId     string
+	ClientSecret string
+}
+
+//获取token  返回的expiretime 秒  当过期的时候
+func (h HuaweiPush) GetToken() (string, error) {
 	req, err := httpclient.
 	Post(consts.ACCESSTOKENURL).
 		Param("grant_type", consts.GRANTTYPE).
-		Param("client_id", client_id).
-		Param("client_secret", client_secret).
+		Param("client_id", h.ClientId).
+		Param("client_secret", h.ClientSecret).
 		Send().String()
 	if err != nil {
-		panic("GetToken 报错了～～")
+		return "", err
 	}
-	var maps map[string]string
-	json.Unmarshal([]byte(req), &maps)
-	return maps["access_token"]
+	return req, nil
 }
 
 /**
@@ -33,7 +35,7 @@ device_token_list: 以半角逗号分隔的华为PUSHTOKEN列表，单次最多�
 expire_time: 格式ISO 8601[6]:2013-06-03T17:30，采用本地时间精确到分钟
 payload: 描述投递消息的JSON结构体，描述PUSH消息的:类型、内容、显示、点击动作、报表统计和扩展信 息。具体参考下面的详细说明。
  */
-func PushByToken(access_token, device_token_list, payload string) error {
+func(h HuaweiPush) PushByToken(access_token, device_token_list, payload string) error {
 	now := time.Now()
 	//dd, _ := time.ParseDuration("24h")
 	//tomorrow := now.Add(dd)
