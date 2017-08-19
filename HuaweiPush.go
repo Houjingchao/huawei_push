@@ -6,11 +6,18 @@ import (
 	"strconv"
 	"fmt"
 	"github.com/Houjingchao/huawei_push/consts"
+	"encoding/json"
 )
 
 type HuaweiPush struct {
 	ClientId     string
 	ClientSecret string
+	Vers         Vers
+}
+
+type Vers struct {
+	Ver   string `json:"ver"`
+	AppID string `json:"appId"`
 }
 
 //获取token  返回的expiretime 秒  当过期的时候
@@ -35,22 +42,22 @@ device_token_list: 以半角逗号分隔的华为PUSHTOKEN列表，单次最多�
 expire_time: 格式ISO 8601[6]:2013-06-03T17:30，采用本地时间精确到分钟
 payload: 描述投递消息的JSON结构体，描述PUSH消息的:类型、内容、显示、点击动作、报表统计和扩展信 息。具体参考下面的详细说明。
  */
-func(h HuaweiPush) PushByToken(access_token, device_token_list, payload string) error {
+func (h HuaweiPush) PushByToken(access_token, device_token_list, payload string) error {
 	now := time.Now()
-	//dd, _ := time.ParseDuration("24h")
-	//tomorrow := now.Add(dd)
+	ver, _ := json.Marshal(h.Vers)
 	fmt.Println(strconv.Itoa(int(now.Unix())))
-	_, err := httpclient.
+	rep, err := httpclient.
 	Post(consts.PUSHURL).
-		Query("nsp_ctx", `{"ver":"1", "appId":"10781817"}`).
+		Query("nsp_ctx", string(ver)).
 		Param("access_token", access_token). //access_token
 		Param("nsp_svc", consts.NSP_SVC). //请求时间戳
 		Param("nsp_ts", strconv.Itoa(int(now.Unix()))). //
 		Param("device_token_list", device_token_list). //以半角逗号分隔的华为PUSHTOKEN列表，单次最多只是1000个
 		Param("payload", payload).
-		Param("expire_time", "2017-07-30T17:30").
+		Param("expire_time", time.Now().Format("2006-01-02T15:04")).
 		Send().String()
 
+	fmt.Println(rep)
 	if err != nil {
 		return err
 	}
